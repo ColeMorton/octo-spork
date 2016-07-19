@@ -1,26 +1,17 @@
 const app = new App();
-
 app.init();
 
 function App() {
+  let dataHash;
+  let appInfo;
   const sync = new Sync();
 
-  var ipfs = window.IpfsApi();
-
-  let editHash;
-  const ipnsHash = 'QmNektv2ExBqgyoD6QcSH6M8B7PPDrjEVGjmSvQq9HV1Hf';
-  let appInfo;
-
   return {
-    init: init,
-    defaultData: defaultData,
-    getHash: getHash,
-    display: display,
-    update: update
+    init: init
   };
 
   function init() {
-      document.onreadystatechange = () => {
+    document.onreadystatechange = () => {
       if (document.readyState === 'complete') {
         document.getElementById('store').onclick = update;
         document.getElementById('default').onclick = defaultData;
@@ -30,7 +21,10 @@ function App() {
     if (!isLocal()) {
       setAppInfo();
     }
-    getHash();
+
+    sync.getDataHash()
+      .then(getData)
+      .then(onDataRecieved);
 
     function setAppInfo() {
       appInfo = {
@@ -39,6 +33,21 @@ function App() {
         timestamp: Date.now()
       };
     }
+  }
+
+  function getData(hash) {
+    dataHash = hash;
+    document.getElementById('hash').innerText = dataHash;
+    return sync.getData(hash);
+  }
+
+  function onDataRecieved(data) {
+    if (data.info) {
+      console.log('Please edit from here: ', data.info.link);
+    }
+
+    document.getElementById('source').innerText = JSON.stringify(data);
+    sync.render();
   }
 
   function isLocal() {
@@ -59,82 +68,16 @@ function App() {
     document.getElementById('source').innerText = JSON.stringify({ appInfo: [], items: [] });
   }
 
-  function getHash() {
-    console.log('getHash');
-    ipfs.name.resolve(ipnsHash, (err, res) => {
-      let hash = res.Path.substr(res.Path.lastIndexOf('/') + 1);
-      console.log('ipfs.name.resolve', hash);
-
-      // if (!isLocal()) {
-      //   appInfo.dataHash = hash;
-      //   appInfo.dataLink = 'https://ipfs.io/ipfs/' + hash;
-
-      //   db.get('appInfo')
-      //     .push(appInfo)
-      //     .value();
-      // }
-
-      document.getElementById('hash').innerText = hash;
-      display(hash);
-    });
-  }
-
-  function display(hash) {
-    console.log('display');
-    
-    ipfs.cat(hash, function (err, stream) {
-      if (err || !stream) return console.error("ipfs cat error", err, stream);
-      var res = '';
-
-      if (!stream.readable) {
-        console.error('unhandled: cat result is a pipe', stream);
-      } else {
-        stream.on('data', function (chunk) {
-          res += chunk.toString();
-        })
-
-        stream.on('error', function (err) {
-          console.error('Oh nooo', err);
-        })
-
-        stream.on('end', function () {
-          let json = JSON.parse(res);
-          console.log('ipfs cat', res);
-
-          if (json.info) {
-            console.log('Please edit from here: ', json.info.link);
-          }
-
-          document.getElementById('source').innerText = res;
-          sync.set(json);
-          sync.render();
-        })
-      }
-    });
-  }
-
   function update() {
-    console.log('update');
-    let json = document.getElementById('source').value;
-    let buffer = new Buffer(json);
-
-    ipfs.add(buffer, function (err, res) {
-      if (err || !res) return console.error("ipfs add error", err, res);
-      let file = res[0];
-      console.log('ipfs.add', file);
-
-      ipfs.name.publish(file.path, (err, res) => {
-        console.log('ipfs.name.publish', res);
-
-        console.log(x);
-
-        display(res.Value);
-      });
-    });
+    let text = document.getElementById('source').value;
+    sync.set(text);
   }
 }
 
 function Sync() {
+  const ipfs = window.IpfsApi();
+  const ipnsHash = 'QmNektv2ExBqgyoD6QcSH6M8B7PPDrjEVGjmSvQq9HV1Hf';
+
   const db = low('db')
   db.setState({});
 
@@ -146,11 +89,65 @@ function Sync() {
   db.defaults({ appInfo: [], items: [] }).value();
 
   return {
+    getDataHash: getDataHash,
+    getData: getData,
     set: set,
     render: render
   };
 
-  function set(json) {
+  function getDataHash() {
+    return ipfs.name.resolve(ipnsHash)
+      .then((res) => {
+        console.log('ipfs.name.resolve', res);
+        return res.Path.substr(res.Path.lastIndexOf('/') + 1);
+      });
+  }
+
+  function getData(hash) {
+    return ipfs.cat(hash)
+      .then((stream) => {
+        console.log('ipfs.cat', stream);
+        var promise = new Promise((resolve, reject) => {
+          var res = '';
+
+          if (!stream.readable) {
+            console.error('unhandled: cat result is a pipe', stream);
+          } else {
+            stream.on('data', function (chunk) {
+              res += chunk.toString();
+            })
+
+            stream.on('error', function (err) {
+              console.error('Oh nooo', err);
+            })
+
+            stream.on('end', function () {
+              let json = JSON.parse(res);
+              console.log('sync.getData success', json);
+              setState(json);
+              resolve(json);
+            })
+          }
+        });
+        return promise;
+      });
+  }
+
+  function set(string) {
+    let buffer = new Buffer(string);
+
+    ipfs.add(buffer, function (err, res) {
+      if (err || !res) return console.error("ipfs add error", err, res);
+      let file = res[0];
+      console.log('ipfs.add', file);
+
+      ipfs.name.publish(file.path, (err, res) => {
+        console.log('ipfs.name.publish', res);
+      });
+    });
+  }
+
+  function setState(json) {
     db.setState(json);
   }
 
