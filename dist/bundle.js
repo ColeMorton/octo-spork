@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-(function (Buffer){
+const Sync = require('./ipfs.js');
+
 const app = new App();
 app.init();
 
@@ -75,8 +76,9 @@ function App() {
     sync.set(text);
   }
 }
-
-function Sync() {
+},{"./ipfs.js":2}],2:[function(require,module,exports){
+(function (Buffer){
+module.exports = function Sync() {
   const ipfs = window.IpfsApi();
   const ipnsHash = 'QmNektv2ExBqgyoD6QcSH6M8B7PPDrjEVGjmSvQq9HV1Hf';
 
@@ -160,9 +162,9 @@ function Sync() {
   }
 }
 }).call(this,require("buffer").Buffer)
-},{"buffer":3,"underscore":9,"underscore-db":8}],2:[function(require,module,exports){
+},{"buffer":4,"underscore":10,"underscore-db":9}],3:[function(require,module,exports){
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -1879,7 +1881,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":4,"ieee754":5,"isarray":6}],4:[function(require,module,exports){
+},{"base64-js":5,"ieee754":6,"isarray":7}],5:[function(require,module,exports){
 'use strict'
 
 exports.toByteArray = toByteArray
@@ -1990,7 +1992,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -2076,14 +2078,14 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // UUID
 // https://gist.github.com/LeverOne/1308368
 /* jshint ignore:start */
@@ -2198,7 +2200,7 @@ module.exports = {
   }
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var fs = require('fs'),
   index = require('./');
 
@@ -2213,7 +2215,7 @@ index.load = function(source) {
 };
 
 module.exports = index;
-},{"./":7,"fs":2}],9:[function(require,module,exports){
+},{"./":8,"fs":3}],10:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
