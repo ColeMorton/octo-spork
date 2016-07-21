@@ -1,12 +1,12 @@
-const Sync = require('./ipfs.js');
+const Config = require('./config.js');
+const Items = require('./items.js');
 
 const app = new App();
 app.init();
 
 function App() {
-  let dataHash;
-  let appInfo;
-  const sync = new Sync();
+  const config = new Config();
+  const items = new Items();
 
   return {
     init: init
@@ -15,63 +15,24 @@ function App() {
   function init() {
     document.onreadystatechange = () => {
       if (document.readyState === 'complete') {
-        document.getElementById('store').onclick = update;
+        document.getElementById('add').onclick = add;
         document.getElementById('default').onclick = defaultData;
       }
     };
 
-    if (!isLocal()) {
-      setAppInfo();
-    }
-
-    sync.getDataHash()
-      .then(getData)
-      .then(onDataRecieved);
-
-    function setAppInfo() {
-      appInfo = {
-        appHash: getCurrentHash(),
-        appLink: 'https://ipfs.io/ipfs/' + getCurrentHash(),
-        timestamp: Date.now()
-      };
-    }
+    items.getAll().then(onItemsRecieved);
   }
 
-  function getData(hash) {
-    dataHash = hash;
-    document.getElementById('hash').innerText = dataHash;
-    return sync.getData(hash);
-  }
-
-  function onDataRecieved(data) {
-    if (data.info) {
-      console.log('Please edit from here: ', data.info.link);
-    }
-
-    document.getElementById('source').innerText = JSON.stringify(data);
-    sync.render();
-  }
-
-  function isLocal() {
-    return getCurrentHash() === false;
-  }
-
-  function getCurrentHash() {
-    let path = window.location.pathname;
-    let startsWith = '/ipfs/';
-    if (path.indexOf(startsWith) !== -1) {
-      path = path.substr(startsWith.length);
-      return path.substr(0, path.length - 1);
-    }
-    return false;
+  function onItemsRecieved(items) {
+    document.getElementById('source').innerText = JSON.stringify(items);
   }
 
   function defaultData() {
-    document.getElementById('source').innerText = JSON.stringify({ appInfo: [], items: [] });
+    items.removeAll().then(onItemsRecieved);
   }
 
-  function update() {
-    let text = document.getElementById('source').value;
-    sync.set(text);
+  function add() {
+    let item = { 'name' : document.getElementById('name').value };
+    items.add(item).then(onItemsRecieved);
   }
 }
