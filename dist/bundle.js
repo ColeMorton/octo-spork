@@ -4,11 +4,17 @@ module.exports = function Config() {
     isLocal: isLocal,
     getCurrentHash: getCurrentHash
   };
-  
+
   return service;
 
   function isLocal() {
-    return getCurrentHash() === false;
+    if (window.location.origin === 'file://') {
+      return true;
+    }
+    if (window.location.hostname === 'localhost') {
+      return true;
+    }
+    return false;
   }
 
   function getCurrentHash() {
@@ -22,7 +28,6 @@ module.exports = function Config() {
   }
 }
 },{}],2:[function(require,module,exports){
-const $ = require('jquery');
 const Config = require('./config.js');
 const Ipfs = require('./ipfs.js');
 
@@ -36,14 +41,21 @@ db._.mixin();
 
 db.defaults({ appInfo: [], items: [{ 'name': 'cole' }] }).value();
 
-let ipfs = new Ipfs();
+const ipfs = new Ipfs();
+const config = new Config();
 
 function getState() {
   return new Promise((resolve, reject) => {
-    ipfs.getIpnsData().then((data) => {
-      db.setState(data);
+    if (config.isLocal) {
+      ipfs.getIpfsHash().then(ipfs.getIpfsData).then(onStateRecieved);
+    } else {
+      ipfs.getIpnsData().then(onStateRecieved);
+    }
+
+    function onStateRecieved(state) {
+      db.setState(state);
       resolve(db.getState());
-    });
+    }
   });
 }
 
@@ -76,7 +88,7 @@ module.exports = {
   add: add,
   removeAll: removeAll
 };
-},{"./config.js":1,"./ipfs.js":4,"jquery":11,"underscore":14,"underscore-db":13}],3:[function(require,module,exports){
+},{"./config.js":1,"./ipfs.js":4,"underscore":14,"underscore-db":13}],3:[function(require,module,exports){
 const Config = require('./config.js');
 const Items = require('./items.js');
 
@@ -127,18 +139,6 @@ module.exports = function Sync() {
   let ipfsHash;
   let config = new Config();
 
-  const db = low('db')
-  db.setState({});
-
-  var _ = require('underscore');
-  var _db = require('underscore-db');
-  _.mixin(_db);
-  db._.mixin();
-
-  db.defaults({ appInfo: [], items: [] }).value();
-
-  // getIpfsHash().then(getIpfsData);
-
   return {
     getIpnsData: getIpnsData,
     getIpfsHash: getIpfsHash,
@@ -149,7 +149,7 @@ module.exports = function Sync() {
   function getIpnsData() {
     console.log('getDataDirect');
     return new Promise((resolve, reject) => {
-      $.get(ipnsGateway, onDataReceived);
+      $.get(ipns, onDataReceived);
 
       function onDataReceived(data) {
         console.log('$.get', data);
@@ -188,7 +188,6 @@ module.exports = function Sync() {
           stream.on('end', function () {
             let json = JSON.parse(res);
             console.log('sync.getData success', json);
-            setState(json);
             resolve(json);
           });
         }
@@ -214,13 +213,9 @@ module.exports = function Sync() {
       });
     });
   }
-
-  function setState(json) {
-    db.setState(json);
-  }
 }
 }).call(this,require("buffer").Buffer)
-},{"./config.js":1,"buffer":7,"jquery":11,"underscore":14,"underscore-db":13}],5:[function(require,module,exports){
+},{"./config.js":1,"buffer":7,"jquery":11}],5:[function(require,module,exports){
 const $ = require('jquery');
 const Config = require('./config.js');
 const db = require('./db.js');

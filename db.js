@@ -11,14 +11,21 @@ db._.mixin();
 
 db.defaults({ appInfo: [], items: [{ 'name': 'cole' }] }).value();
 
-let ipfs = new Ipfs();
+const ipfs = new Ipfs();
+const config = new Config();
 
 function getState() {
   return new Promise((resolve, reject) => {
-    ipfs.getIpnsData().then((data) => {
-      db.setState(data);
+    if (config.isLocal) {
+      ipfs.getIpfsHash().then(ipfs.getIpfsData).then(onStateRecieved);
+    } else {
+      ipfs.getIpnsData().then(onStateRecieved);
+    }
+
+    function onStateRecieved(state) {
+      db.setState(state);
       resolve(db.getState());
-    });
+    }
   });
 }
 

@@ -3,11 +3,17 @@ module.exports = function Config() {
     isLocal: isLocal,
     getCurrentHash: getCurrentHash
   };
-  
+
   return service;
 
   function isLocal() {
-    return getCurrentHash() === false;
+    if (window.location.origin === 'file://') {
+      return true;
+    }
+    if (window.location.hostname === 'localhost') {
+      return true;
+    }
+    return false;
   }
 
   function getCurrentHash() {

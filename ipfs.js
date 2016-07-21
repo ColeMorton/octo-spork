@@ -8,18 +8,6 @@ module.exports = function Sync() {
   let ipfsHash;
   let config = new Config();
 
-  const db = low('db')
-  db.setState({});
-
-  var _ = require('underscore');
-  var _db = require('underscore-db');
-  _.mixin(_db);
-  db._.mixin();
-
-  db.defaults({ appInfo: [], items: [] }).value();
-
-  // getIpfsHash().then(getIpfsData);
-
   return {
     getIpnsData: getIpnsData,
     getIpfsHash: getIpfsHash,
@@ -28,7 +16,7 @@ module.exports = function Sync() {
   };
 
   function getIpnsData() {
-    console.log('getDataDirect');
+    console.log('getIpnsData');
     return new Promise((resolve, reject) => {
       $.get(ipnsGateway, onDataReceived);
 
@@ -69,7 +57,6 @@ module.exports = function Sync() {
           stream.on('end', function () {
             let json = JSON.parse(res);
             console.log('sync.getData success', json);
-            setState(json);
             resolve(json);
           });
         }
@@ -94,9 +81,5 @@ module.exports = function Sync() {
         });
       });
     });
-  }
-
-  function setState(json) {
-    db.setState(json);
   }
 }
